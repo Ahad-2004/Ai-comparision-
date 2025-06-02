@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gravity Portfolio</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+    body { font-family: 'Segoe UI', sans-serif; background: #111; color: #fff; overflow-x: hidden; }
+    canvas { position: fixed; top: 0; left: 0; z-index: -1; }
+    nav { position: fixed; top: 0; width: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; gap: 1rem; padding: 1rem; z-index: 10; }
+    nav a { color: white; text-decoration: none; font-weight: bold; }
+    section { padding: 100px 20px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .skills-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 800px; }
+    .skill { width: 100px; text-align: center; }
+    .bar { height: 10px; background: #333; border-radius: 5px; margin-top: 5px; overflow: hidden; }
+    .bar-fill { height: 10px; background: #00d8ff; border-radius: 5px; width: 0%; transition: width 1s; }
+    .project { margin: 20px; padding: 20px; background: #222; border-radius: 10px; transition: transform 0.3s; cursor: pointer; }
+    .project:hover { transform: scale(1.05); }
+    form { display: flex; flex-direction: column; gap: 10px; max-width: 400px; width: 100%; }
+    input, textarea { padding: 10px; border-radius: 5px; border: none; outline: none; }
+    button { padding: 10px; border: none; background: #00d8ff; color: white; border-radius: 5px; cursor: pointer; }
+    h1, h2, h3 { text-align: center; }
+  </style>
+</head>
+<body>
+  <canvas id="bg"></canvas>
+
+  <nav>
+    <a href="#hero">Home</a>
+    <a href="#about">About</a>
+    <a href="#skills">Skills</a>
+    <a href="#projects">Projects</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <section id="hero">
+    <h1>John Doe</h1>
+    <h2>Creative Developer</h2>
+  </section>
+
+  <section id="about">
+    <h2>About Me</h2>
+    <p>I build interactive, user-friendly websites with a touch of animation magic.</p>
+  </section>
+
+  <section id="skills">
+    <h2>Skills</h2>
+    <div class="skills-container">
+      <div class="skill">
+        <p>HTML</p>
+        <div class="bar"><div class="bar-fill" data-width="90%"></div></div>
+      </div>
+      <div class="skill">
+        <p>CSS</p>
+        <div class="bar"><div class="bar-fill" data-width="85%"></div></div>
+      </div>
+      <div class="skill">
+        <p>JavaScript</p>
+        <div class="bar"><div class="bar-fill" data-width="80%"></div></div>
+      </div>
+      <div class="skill">
+        <p>React</p>
+        <div class="bar"><div class="bar-fill" data-width="75%"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="projects">
+    <h2>Projects</h2>
+    <div class="project" onclick="alert('Project 1 clicked!')">
+      <h3>Project One</h3>
+      <p>Click to learn more.</p>
+    </div>
+    <div class="project" onclick="alert('Project 2 clicked!')">
+      <h3>Project Two</h3>
+      <p>Click to learn more.</p>
+    </div>
+  </section>
+
+  <section id="contact">
+    <h2>Contact</h2>
+    <form onsubmit="event.preventDefault(); alert('Message sent!');">
+      <input type="text" placeholder="Name" required>
+      <input type="email" placeholder="Email" required>
+      <textarea rows="5" placeholder="Message" required></textarea>
+      <button type="submit">Send</button>
+    </form>
+  </section>
+
+  <script>
+    // Gravity-based particle animation
+    const canvas = document.getElementById('bg');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const gravity = 0.3;
+    const friction = 0.75;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function createParticles(count) {
+      particles = [];
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 2 + 1,
+          color: `hsl(${Math.random() * 360}, 50%, 50%)`,
+          vx: (Math.random() - 0.5) * 2,
+          vy: Math.random() * -3
+        });
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.vy += gravity;
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.y + p.radius > canvas.height) {
+          p.y = canvas.height - p.radius;
+          p.vy *= -friction;
+        }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+
+    createParticles(100);
+    animateParticles();
+
+    // Animate skill bars on scroll
+    const bars = document.querySelectorAll('.bar-fill');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.width = entry.target.dataset.width;
+        }
+      });
+    }, { threshold: 0.6 });
+    bars.forEach(bar => observer.observe(bar));
+  </script>
+</body>
+</html>

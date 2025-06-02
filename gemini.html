@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>John Doe - Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Base font for the entire application */
+        .font-sans {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Animation for elements fading in from bottom */
+        .fade-in-up {
+            animation: fadeInUp 1s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Animation for hero section title fading in from top */
+        .animate-fade-in-down {
+            animation: fadeInDown 1s ease-out forwards;
+            animation-delay: 0.5s; /* Delay for a staggered effect */
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Animation for hero section subtitle fading in from bottom */
+        .animate-fade-in-up {
+            animation: fadeInUp 1s ease-out forwards;
+            animation-delay: 0.7s; /* Delay for a staggered effect */
+        }
+
+        /* Skill progress bar animation */
+        .skill-progress {
+            animation: fillProgress 1.5s ease-out forwards;
+            width: 0%; /* Start from 0 for animation */
+        }
+
+        /* Keyframes for skill progress bar filling up */
+        @keyframes fillProgress {
+            to {
+                width: var(--skill-width); /* Uses a CSS variable set by React for target width */
+            }
+        }
+
+        /* Ensure the canvas element is block-level and fills its container */
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+    <div id="root"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script type="text/babel">
+        // Main App component
+        function App() {
+            // Ref for the hero section canvas, used by Three.js
+            const heroCanvasRef = React.useRef(null);
+            // State for dark mode toggle
+            const [darkMode, setDarkMode] = React.useState(false);
+            // Refs for each section for smooth scrolling and IntersectionObserver
+            const sectionRefs = {
+                about: React.useRef(null),
+                skills: React.useRef(null),
+                projects: React.useRef(null),
+                contact: React.useRef(null),
+            };
+
+            // Function to smoothly scroll to a section
+            const scrollToSection = (id) => {
+                sectionRefs[id].current.scrollIntoView({ behavior: 'smooth' });
+            };
+
+            // Effect hook for Three.js gravity animation in the hero section
+            React.useEffect(() => {
+                // Ensure the canvas ref is available
+                if (!heroCanvasRef.current) return;
+
+                let scene, camera, renderer, particles;
+                const particleCount = 100; // Number of particles in the animation
+                const gravity = -0.005;   // Gravity strength (negative for downward pull)
+                const bounceFactor = -0.7; // How much velocity is retained after bouncing (e.g., 0.7 means 70% retained)
+
+                // Initialize the Three.js scene, camera, and renderer
+                const init = () => {
+                    scene = new THREE.Scene();
+                    // Perspective camera for 3D view
+                    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    // WebGL renderer attached to the canvas
+                    renderer = new THREE.WebGLRenderer({ canvas: heroCanvasRef.current, antialias: true, alpha: true });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                    renderer.setPixelRatio(window.devicePixelRatio); // Use device pixel ratio for sharper rendering
+                    camera.position.z = 5; // Position camera back to see the scene
+
+                    particles = [];
+                    // Geometry for the particles (small spheres)
+                    const geometry = new THREE.SphereGeometry(0.1, 16, 16);
+                    // Material for the particles (basic material, not affected by lights)
+                    const material = new THREE.MeshBasicMaterial({ color: 0x8888ff }); // Blueish particles
+
+                    // Create and add particles to the scene
+                    for (let i = 0; i < particleCount; i++) {
+                        const particle = new THREE.Mesh(geometry, material);
+                        // Random initial positions
+                        particle.position.x = (Math.random() - 0.5) * 10;
+                        particle.position.y = Math.random() * 5 + 3; // Start particles above the visible screen
+                        particle.position.z = (Math.random() - 0.5) * 5;
+                        // Store velocity in userData for physics simulation
+                        particle.userData.velocity = new THREE.Vector3(0, 0, 0);
+                        scene.add(particle);
+                        particles.push(particle);
+                    }
+                };
+
+                // Animation loop for particle movement and rendering
+                const animate = () => {
+                    requestAnimationFrame(animate); // Request next frame for smooth animation
+
+                    particles.forEach(particle => {
+                        // Apply gravity to vertical velocity
+                        particle.userData.velocity.y += gravity;
+                        // Update particle position based on velocity
+                        particle.position.add(particle.userData.velocity);
+
+                        // Simple collision detection with a 'ground' plane
+                        if (particle.position.y < -2.5) { // -2.5 is roughly the bottom of the visible area
+                            particle.position.y = -2.5; // Reset position to ground level
+                            particle.userData.velocity.y *= bounceFactor; // Reverse and dampen vertical velocity
+                            // Add slight random horizontal velocity for more natural bouncing
+                            particle.userData.velocity.x += (Math.random() - 0.5) * 0.01;
+                            particle.userData.velocity.z += (Math.random() - 0.5) * 0.01;
+                        }
+
+                        // Reset particle if it moves too far horizontally off-screen
+                        if (Math.abs(particle.position.x) > 5 || Math.abs(particle.position.z) > 5) {
+                            particle.position.x = (Math.random() - 0.5) * 10;
+                            particle.position.y = Math.random() * 5 + 3; // Reset to top
+                            particle.position.z = (Math.random() - 0.5) * 5;
+                            particle.userData.velocity.set(0, 0, 0); // Reset velocity
+                        }
+                    });
+
+                    renderer.render(scene, camera); // Render the scene
+                };
+
+                // Handle window resizing to maintain aspect ratio and renderer size
+                const onWindowResize = () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                };
+
+                init(); // Initialize Three.js
+                animate(); // Start the animation loop
+                window.addEventListener('resize', onWindowResize); // Add resize listener
+
+                // Cleanup function when component unmounts
+                return () => {
+                    window.removeEventListener('resize', onWindowResize);
+                    // Dispose Three.js resources to prevent memory leaks
+                    if (renderer) {
+                        renderer.dispose();
+                    }
+                    if (scene) {
+                        scene.traverse((object) => {
+                            if (object.isMesh) {
+                                object.geometry.dispose();
+                                object.material.dispose();
+                            }
+                        });
+                    }
+                };
+            }, []); // Empty dependency array ensures this runs only once on mount
+
+            // Effect hook for IntersectionObserver to animate sections into view on scroll
+            React.useEffect(() => {
+                const observerOptions = {
+                    root: null, // Observe relative to the viewport
+                    rootMargin: '0px',
+                    threshold: 0.1, // Trigger when 10% of the element is visible
+                };
+
+                // Callback function for when observed elements intersect the viewport
+                const observerCallback = (entries, observer) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('fade-in-up'); // Add animation class
+                            observer.unobserve(entry.target); // Stop observing once animated
+                        }
+                    });
+                };
+
+                const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+                // Observe each section (except the hero section)
+                Object.values(sectionRefs).forEach((ref) => {
+                    if (ref.current && ref.current.id !== 'hero') { // Hero section is always visible
+                        ref.current.classList.add('opacity-0', 'translate-y-10'); // Initial hidden state
+                        observer.observe(ref.current);
+                    }
+                });
+
+                // Cleanup function to disconnect observer when component unmounts
+                return () => {
+                    observer.disconnect();
+                };
+            }, []); // Empty dependency array ensures this runs only once on mount
+
+            return (
+                // Main container div with dynamic dark mode classes
+                <div className={`font-sans ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-900'} transition-colors duration-500`}>
+                    {/* Dark Mode Toggle Button */}
+                    <button
+                        onClick={() => setDarkMode(!darkMode)}
+                        className="fixed top-4 right-4 z-50 p-3 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        aria-label="Toggle Dark Mode"
+                    >
+                        {/* SVG for moon icon (dark mode) */}
+                        {darkMode ? (
+                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                            </svg>
+                        ) : (
+                            // SVG for sun icon (light mode)
+                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.459 4.511a1 1 0 01.707.023l.173.13a.997.997 0 01.127.173l.023.07a1 1 0 01-.023.707l-.13.173a.997 0 01-.173.127l-.07.023a1 1 0 01-.707-.023l-.173-.13a.997 0 01-.127-.173l-.023-.07a1 1 0 01.023-.707l.13-.173a.997 0 01.173-.127l.07-.023zM3 10a1 1 0 011-1h1a1 1 0 110 2H4a1 1 0 01-1-1zm11.536-6.464a1 1 0 010 1.414L14.07 6.414a1 1 0 01-1.414 0L12.07 5.07a1 1 0 010-1.414L13.536 3.536zM4.929 12.071a1 1 0 011.414 0L6.464 13.536a1 1 0 010 1.414L5.07 14.929a1 1 0 01-1.414 0L3.536 13.536a1 1 0 010-1.414L4.929 12.071zM10 15a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-6.464-3.536a1 1 0 011.414 0L6.464 12.07a1 1 0 010 1.414L5.07 14.929a1 1 0 01-1.414 0L3.536 13.536a1 1 0 010-1.414L4.929 12.071z"></path>
+                            </svg>
+                        )}
+                    </button>
+
+                    {/* Navigation Bar */}
+                    <nav className="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 bg-opacity-80 dark:bg-opacity-80 backdrop-blur-sm shadow-md py-4 px-8 flex justify-center space-x-8 rounded-b-xl transition-colors duration-500">
+                        {/* Map through section IDs to create navigation buttons */}
+                        {['about', 'skills', 'projects', 'contact'].map((section) => (
+                            <button
+                                key={section}
+                                onClick={() => scrollToSection(section)}
+                                className="text-lg font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 transform hover:scale-105"
+                            >
+                                {section.charAt(0).toUpperCase() + section.slice(1)} {/* Capitalize first letter */}
+                            </button>
+                        ))}
+                    </nav>
+
+                    {/* Hero Section - Visually striking intro with gravity animation */}
+                    <section id="hero" className="relative h-screen flex flex-col items-center justify-center text-center overflow-hidden">
+                        {/* Canvas for Three.js animation, positioned absolutely to fill the section */}
+                        <canvas ref={heroCanvasRef} className="absolute inset-0 w-full h-full z-0"></canvas>
+                        {/* Content overlay, positioned relatively above the canvas */}
+                        <div className="relative z-10 p-8 bg-black bg-opacity-40 rounded-xl shadow-2xl backdrop-blur-sm">
+                            <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-4 animate-fade-in-down">
+                                John Doe
+                            </h1>
+                            <p className="text-2xl md:text-4xl font-light text-blue-300 animate-fade-in-up">
+                                Software Engineer | Web Developer | Innovator
+                            </p>
+                        </div>
+                    </section>
+
+                    {/* About Me Section */}
+                    <section ref={sectionRefs.about} id="about" className="min-h-screen flex items-center justify-center p-8 md:p-16 bg-gradient-to-br from-blue-50 dark:from-gray-800 to-white dark:to-gray-900 transition-colors duration-500 rounded-xl m-4 md:m-8 shadow-lg">
+                        <div className="max-w-4xl text-center">
+                            <h2 className="text-4xl font-bold mb-6 text-gray-800 dark:text-white">About Me</h2>
+                            <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+                                Hello! I'm John Doe, a passionate Software Engineer with a knack for building
+                                beautiful and functional web applications. My journey in tech started with a curiosity
+                                for how things work, and it quickly evolved into a drive to create. I thrive on
+                                solving complex problems and constantly learning new technologies.
+                                <br /><br />
+                                With a strong foundation in front-end and back-end development, I specialize in crafting
+                                user-centric experiences that are both robust and scalable. When I'm not coding, you can
+                                find me exploring new hiking trails, experimenting with photography, or diving into a good book.
+                            </p>
+                        </div>
+                    </section>
+
+                    {/* Skills Section */}
+                    <section ref={sectionRefs.skills} id="skills" className="min-h-screen flex flex-col items-center justify-center p-8 md:p-16 bg-gradient-to-br from-white dark:from-gray-900 to-blue-50 dark:to-gray-800 transition-colors duration-500 rounded-xl m-4 md:m-8 shadow-lg">
+                        <h2 className="text-4xl font-bold mb-12 text-gray-800 dark:text-white">My Skills</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-3xl">
+                            {/* Map through skills to create animated progress bars */}
+                            {['React', 'JavaScript', 'Tailwind CSS', 'Node.js', 'Python', 'Databases'].map((skill, index) => (
+                                <div key={skill} className="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                                    <h3 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">{skill}</h3>
+                                    <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600">
+                                        {/* Progress bar with dynamic width and CSS variable for animation */}
+                                        <div
+                                            className="bg-blue-600 h-2.5 rounded-full skill-progress"
+                                            style={{ '--skill-width': `${90 - index * 5}%` }} // Example varying progress
+                                        ></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* Projects Section */}
+                    <section ref={sectionRefs.projects} id="projects" className="min-h-screen flex flex-col items-center justify-center p-8 md:p-16 bg-gradient-to-br from-blue-50 dark:from-gray-800 to-white dark:to-gray-900 transition-colors duration-500 rounded-xl m-4 md:m-8 shadow-lg">
+                        <h2 className="text-4xl font-bold mb-12 text-gray-800 dark:text-white">My Projects</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
+                            {/* Map through dummy projects to create project cards */}
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <a
+                                    key={i}
+                                    // Removed the JSX comment from inside the href attribute to fix the SyntaxError
+                                    href={`#project-${i}`}
+                                    className="block bg-white dark:bg-gray-700 rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                                >
+                                    {/* Placeholder image for project */}
+                                    <img
+                                        src={`https://placehold.co/400x250/E0F2F7/000?text=Project+${i}`}
+                                        alt={`Project ${i}`}
+                                        className="w-full h-48 object-cover"
+                                        onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/400x250/E0F2F7/000?text=Image+Error"; }}
+                                    />
+                                    <div className="p-6">
+                                        <h3 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">Project Title {i}</h3>
+                                        <p className="text-gray-600 dark:text-gray-300">
+                                            A brief description of Project {i}, highlighting its key features and technologies used.
+                                        </p>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* Contact Section */}
+                    <section ref={sectionRefs.contact} id="contact" className="min-h-screen flex flex-col items-center justify-center p-8 md:p-16 bg-gradient-to-br from-white dark:from-gray-900 to-blue-50 dark:to-gray-800 transition-colors duration-500 rounded-xl m-4 md:m-8 shadow-lg">
+                        <h2 className="text-4xl font-bold mb-12 text-gray-800 dark:text-white">Get in Touch</h2>
+                        <div className="w-full max-w-md bg-white dark:bg-gray-700 p-8 rounded-lg shadow-md">
+                            {/* Contact Form */}
+                            <form className="space-y-6">
+                                <div>
+                                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-200">Name</label>
+                                    <input
+                                        type="text"
+                                        id="name"
+                                        name="name"
+                                        className="mt-1 block w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white transition-colors duration-300"
+                                        placeholder="Your Name"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-200">Email</label>
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        name="email"
+                                        className="mt-1 block w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white transition-colors duration-300"
+                                        placeholder="you@example.com"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-200">Message</label>
+                                    <textarea
+                                        id="message"
+                                        name="message"
+                                        rows="4"
+                                        className="mt-1 block w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white transition-colors duration-300"
+                                        placeholder="Your message..."
+                                    ></textarea>
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-105"
+                                >
+                                    Send Message
+                                </button>
+                            </form>
+
+                            {/* Social Media Icons */}
+                            <div className="mt-8 flex justify-center space-x-6">
+                                {/* GitHub Icon */}
+                                <a href="https://github.com/yourusername" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 transform hover:scale-125">
+                                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.47.087.683-.233.683-.518 0-.256-.007-1.022-.01-2.006-2.775.604-3.363-1.379-3.363-1.379-.454-1.156-1.11-1.464-1.11-1.464-.908-.618.069-.606.069-.606 1.003.07 1.531 1.032 1.531 1.032.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.953 0-1.096.392-1.988 1.03-2.69-.104-.253-.448-1.274.097-2.659 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.385.202 2.406.097 2.659.638.702 1.03 1.594 1.03 2.69 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .288.208.608.688.517C21.137 20.188 24 16.421 24 12.017 24 6.484 19.522 2 14 2h-2z" clipRule="evenodd" />
+                                    </svg>
+                                </a>
+                                {/* LinkedIn Icon */}
+                                <a href="https://linkedin.com/in/yourusername" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 transform hover:scale-125">
+                                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M0 0h24v24H0z" fill="none"/>
+                                        <path d="M19 0H5C2.239 0 0 2.239 0 5v14c0 2.761 2.239 5 5 5h14c2.761 0 5-2.239 5-5V5c0-2.761-2.239-5-5-5zM8 19H5V8h3v11zM6.5 6.732c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zM19 19h-3v-5.337c0-1.08-.02-2.471-1.506-2.471-1.506 0-1.732 1.177-1.732 2.407V19h-3V8h2.891v1.265h.04c.408-.774 1.401-1.588 2.877-1.588 3.088 0 3.652 2.036 3.652 4.679V19z"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Footer Section */}
+                    <footer className="py-8 text-center text-gray-600 dark:text-gray-400 text-sm bg-gray-100 dark:bg-gray-800 transition-colors duration-500 rounded-t-xl m-4 md:m-8 shadow-inner">
+                        <p>&copy; {new Date().getFullYear()} John Doe. All rights reserved.</p>
+                    </footer>
+                </div>
+            );
+        }
+
+        // Render the React App component into the root div
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

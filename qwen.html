@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Portfolio</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .dark-mode {
+            background-color: #121212;
+            color: #fff;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        .hero {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            flex-direction: column;
+        }
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 0.5rem;
+        }
+        .hero h2 {
+            font-size: 2rem;
+            margin-top: 0;
+        }
+        .section {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 2rem;
+        }
+        .skills .skill {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .skills .skill span {
+            width: 200px;
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .skills .skill span::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background-color: #333;
+            transition: width 0.5s ease;
+        }
+        .projects .project {
+            margin: 1rem;
+            padding: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+        .projects .project:hover {
+            transform: scale(1.05);
+        }
+        .contact form {
+            display: flex;
+            flex-direction: column;
+        }
+        .contact input, .contact textarea {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .contact button {
+            padding: 0.5rem 1rem;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .contact button:hover {
+            background-color: #555;
+        }
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 3rem;
+            }
+            .hero h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"  crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"  crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r140/three.min.js"></script> 
+    <script src="https://unpkg.com/framer-motion@5.6.0/dist/framer-motion.umd.min.js"></script> 
+    <script>
+        if (!window.React || !window.ReactDOM || !window.THREE || !window.FramerMotion) {
+            console.error("One or more libraries failed to load.");
+        } else {
+            const { useState, useEffect, useRef } = React;
+            const { motion } = window.FramerMotion;
+
+            function App() {
+                const [isDarkMode, setIsDarkMode] = useState(false);
+                const containerRef = useRef(null);
+
+                useEffect(() => {
+                    const scene = new THREE.Scene();
+                    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector('canvas') });
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+
+                    const particlesGeometry = new THREE.BufferGeometry();
+                    const particlesCount = 500;
+                    const posArray = new Float32Array(particlesCount * 3);
+
+                    for (let i = 0; i < particlesCount * 3; i++) {
+                        posArray[i] = (Math.random() - 0.5) * 500;
+                    }
+
+                    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+                    const particlesMaterial = new THREE.PointsMaterial({
+                        size: 2,
+                        color: isDarkMode ? '#fff' : '#333'
+                    });
+
+                    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+                    scene.add(particlesMesh);
+
+                    camera.position.z = 50;
+
+                    const animate = () => {
+                        particlesMesh.rotation.y += 0.001;
+                        renderer.render(scene, camera);
+                        requestAnimationFrame(animate);
+                    };
+
+                    animate();
+
+                    window.addEventListener('resize', () => {
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                    });
+
+                    return () => {
+                        renderer.dispose();
+                    };
+                }, [isDarkMode]);
+
+                return (
+                    <div ref={containerRef} className={isDarkMode ? 'dark-mode' : ''}>
+                        <canvas></canvas>
+                        <div className="hero">
+                            <motion.h1 initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>John Doe</motion.h1>
+                            <motion.h2 initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>Web Developer</motion.h2>
+                        </div>
+                        <section id="about" className="section">
+                            <motion.h2 initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>About Me</motion.h2>
+                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                        </section>
+                        <section id="skills" className="section">
+                            <motion.h2 initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>Skills</motion.h2>
+                            <div className="skills">
+                                <div className="skill">
+                                    <span style={{ width: '80%' }}><span style={{ width: '80%' }}></span></span>
+                                    <span>JavaScript</span>
+                                </div>
+                                <div className="skill">
+                                    <span style={{ width: '90%' }}><span style={{ width: '90%' }}></span></span>
+                                    <span>React</span>
+                                </div>
+                                <div className="skill">
+                                    <span style={{ width: '70%' }}><span style={{ width: '70%' }}></span></span>
+                                    <span>CSS</span>
+                                </div>
+                            </div>
+                        </section>
+                        <section id="projects" className="section">
+                            <motion.h2 initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>Projects</motion.h2>
+                            <div className="projects">
+                                <motion.div className="project" whileHover={{ scale: 1.05 }}>
+                                    <h3>Project 1</h3>
+                                    <p>Description of project 1</p>
+                                </motion.div>
+                                <motion.div className="project" whileHover={{ scale: 1.05 }}>
+                                    <h3>Project 2</h3>
+                                    <p>Description of project 2</p>
+                                </motion.div>
+                                <motion.div className="project" whileHover={{ scale: 1.05 }}>
+                                    <h3>Project 3</h3>
+                                    <p>Description of project 3</p>
+                                </motion.div>
+                            </div>
+                        </section>
+                        <section id="contact" className="section">
+                            <motion.h2 initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }}>Contact</motion.h2>
+                            <form>
+                                <input type="text" placeholder="Name" />
+                                <input type="email" placeholder="Email" />
+                                <textarea placeholder="Message"></textarea>
+                                <button type="submit">Send</button>
+                            </form>
+                        </section>
+                        <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ position: 'fixed', bottom: '20px', right: '20px', padding: '10px', border: 'none', borderRadius: '50%', backgroundColor: isDarkMode ? '#fff' : '#333', color: isDarkMode ? '#333' : '#fff', cursor: 'pointer' }}>
+                            {isDarkMode ? '☀️' : '🌙'}
+                        </button>
+                    </div>
+                );
+            }
+
+            ReactDOM.render(<App />, document.getElementById('root'));
+        }
+    </script>
+</body>
+</html>
