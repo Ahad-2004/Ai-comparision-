@@ -54,4 +54,34 @@
 
 ---
 
+## 📝 AI Model Reviews
+
+| AI Model     | Review                                                                 |
+|--------------|------------------------------------------------------------------------|
+|  **ChatGPT**   | Stagnant, very simple, not that appealing                             |
+|  **DeepSeek**  | Really cool animation, smooth, floating text looks great             |
+|  **Gemini**    | Real user interaction (mouse reacts with balls), but layout looks boxy |
+|  **Grok**      | ❌ Not working – **Disqualified**                                       |
+|  **Qwen**      | ❌ Not working – **Disqualified**                                       |
+
+---
+
+## 📌 Summary
+
+This project is a creative experiment to explore how different **AI models** interpret the same design task.  
+Each portfolio represents the model’s unique approach to layout, interaction, and responsiveness — offering a side-by-side view of:
+
+- 🔍 Creativity in design
+- ⚙️ Code structure and implementation
+- ✨ Visual and interactive polish
+- ⚡ Performance and responsiveness
+
+📊 A perfect showcase of **AI-vs-AI creativity in frontend development**!
+
+---
+
+<p align="center">
+  If you enjoyed this project, feel free to ⭐ star the repo or fork it to create your own AI comparison!
+</p>
+
 
