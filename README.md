@@ -54,14 +54,4 @@
 
 ---
 
-## 📷 Screenshots
 
-_Add preview screenshots or GIFs of each version here!_
-
-> 💡 Tip: Use online tools like [Carbon](https://carbon.now.sh/) or take real browser screenshots.
-
----
-
-## 🤝 Contribute
-
-Want to join the challenge? Fork this repo and add your own AI-generated page as:
